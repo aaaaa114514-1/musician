@@ -1,4 +1,4 @@
-C:\Users\zby_mark\AppData\Local\Netease\CloudMusic\Cache\Cache
+C:\Users\Netease\CloudMusic\Cache\Cache
 D:\BGM\Download&Decode
 D:\BGM\Download&Decode\temp
 D:\BGM\Lis
