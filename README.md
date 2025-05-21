@@ -81,7 +81,7 @@ D:\BGM\Settings\history.txt               # History file path
    - *Skip if you don’t need Kugou downloads.*
 
 4. **History File**
-    Specify a path for `history.txt` (line 9). The program will manage this file automatically.
+    Specify a path for `history.txt` (line 9) and **move the `history.txt` file to the path** . Then, the program will manage this file automatically.
 
 ------
 
@@ -144,6 +144,7 @@ Type commands after `>>` (case-insensitive).
 
 1. Review the **User Guide** above for context.
 2. Inspect `musician.py`—the code is straightforward (hopefully)! 😊
+3. Use `pyinstaller --onefile musician.py -i Icon.ico` to pack up the `.py` code into a `.exe` file.
 
 ------
 

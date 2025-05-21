@@ -56,7 +56,7 @@ D:\BGM\Settings\history.txt               # 历史记录文件路径
 
 1. **网易云缓存路径**
 
-   - 打开 **网易云音乐桌面版** → 设置 → 下载 → **复制缓存路径**。
+   - 打开 **网易云音乐桌面端** → 设置 → 下载 → **复制缓存路径**。
    - 在路径末尾手动添加 `\Cache`（如 `C:\...\Cache\Cache`）。
 
 2. **音乐库文件夹**
@@ -78,10 +78,10 @@ D:\BGM\Settings\history.txt               # 历史记录文件路径
    - 找到 `https://wwwapi.kugou.com/play/songinfo?` 的请求。
    - 复制 `token` 参数的**最后32位字符**，即在`...5e6de`之后的部分（如 `55f2409f72970daa21bdc63acee305db`）。
    - 粘贴到 `savedata.txt` 第 8 行。
-   - *如果不需要酷狗下载，可跳过此步。*
+   - *如果不需要使用酷狗下载音乐，可跳过此步。*
 
 4. **历史记录文件**
-    指定 `history.txt` 的路径（第 9 行），程序会自动管理该文件。
+    指定 `history.txt` 的路径（第 9 行）**并将给出的 `history.txt` 文件移到指定路径下**，程序会自动管理该文件。
 
 ------
 
@@ -144,6 +144,7 @@ D:\BGM\Settings\history.txt               # 历史记录文件路径
 
 1. 先阅读**用户指南**了解功能逻辑。
 2. 查看 `musician.py`——代码应该还算易懂（大概）。😊
+3. 在终端用指令 `pyinstaller --onefile musician.py -i Icon.ico` 来将 `.py` 文件打包成 `.exe` 文件。
 
 ------
 
