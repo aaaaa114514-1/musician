@@ -2,7 +2,7 @@
 
 ## A Command-Line Music Player with Extra Features
 
-**Code by \*aaaaa***
+**Code by _aaaaa_**
 
 **Musician** is a **command-line-controlled music player** designed for **coders** who want to:
 
