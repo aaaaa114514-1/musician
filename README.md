@@ -138,6 +138,8 @@ Type commands after `>>` (case-insensitive).
 | `history`             | Show listening history.                            |
 | `?`                   | Show currently playing song.                       |
 
+**Please add at least one `.mp3` file in folder `BGM` and `Lis` , or the _musician_ may crash !**
+
 ------
 
 ## **For Coders**
