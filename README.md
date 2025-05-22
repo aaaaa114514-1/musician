@@ -115,7 +115,7 @@ Type commands after `>>` (case-insensitive).
 
 | Command                      | Action                                                  |
 | ---------------------------- | ------------------------------------------------------- |
-| `play`                       | Play/pause.                                             |
+| `play`/`pause`               | Play/pause.                                             |
 | `play <#>`                   | Play specific songs (e.g., `play 1-3 5`).               |
 | `add <#>`                    | Add to playlist.                                        |
 | `mode <single/cycle/random>` | Set playback mode.                                      |
@@ -137,6 +137,10 @@ Type commands after `>>` (case-insensitive).
 | `timelimit <minutes>` | Set max playtime (e.g., `timelimit 45`).           |
 | `history`             | Show listening history.                            |
 | `?`                   | Show currently playing song.                       |
+
+---
+
+**_Musician_ uses `.mp3` to store all the music, and music in other formats is not supported for playback. You can also add your original music library into folder `BGM` and `Lis` .**
 
 **Please add at least one `.mp3` file in folder `BGM` and `Lis` , or the _musician_ may crash !**
 
