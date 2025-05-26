@@ -87,56 +87,56 @@ D:\BGM\Settings\history.txt               # History file path
 
 ### **2. Command Reference**
 
-Type commands after `>>` (case-insensitive).
+Type commands after `>>` (case-insensitive). Commands with `/` or `:` indicate alternative shorter versions.
 
 #### **Basic Controls**
 
-| Command             | Action                                 |
-| ------------------- | -------------------------------------- |
-| `quit`/`exit`/`end` | Exit the program (*always use this!*). |
-| `help`              | Show all commands.                     |
+|       Command       | Shortcut |                 Action                 |
+| :-----------------: | :------: | :------------------------------------: |
+| `quit`/`exit`/`end` |   `:q`   | Exit the program (*always use this!*). |
+|       `help`        |   `:h`   |           Show all commands.           |
 
 #### **NetEase 163music**
 
-| Command      | Action                                                       |
-| ------------ | ------------------------------------------------------------ |
-| `check163`   | List cached songs. (*Check network if "Network Error" occurs.*) |
-| `decode <#>` | Decode songs (e.g., `decode 3` or `decode 2 5-9 4`).         |
-| `clear163`   | Clear cache (*close NetEase first!*).                        |
+|   Command    |   Shortcut   |                            Action                            |
+| :----------: | :----------: | :----------------------------------------------------------: |
+|  `check163`  | `:163_cache` | List cached songs. (*Check network if "Network Error" occurs.*) |
+| `decode <#>` |   `:d <#>`   |     Decode songs (e.g., `decode 3` or `decode 2 5-9 4`).     |
+|  `clear163`  | `:163_clear` |            Clear cache (*close NetEase first!*).             |
 
 #### **Kugou Music**
 
-| Command         | Action                                                  |
-| --------------- | ------------------------------------------------------- |
-| `search <song>` | Search (e.g., `search 夏の紫苑`).                       |
-| `download <#>`  | Download. (*VIP songs require login with VIP account.*) |
+|     Command     |  Shortcut   |                         Action                          |
+| :-------------: | :---------: | :-----------------------------------------------------: |
+| `search <song>` | `/s <song>` |            Search (e.g., `search 夏の紫苑`).            |
+| `download <#>`  |  `/d <#>`   | Download. (*VIP songs require login with VIP account.*) |
 
 #### **Playback**
 
-| Command                      | Action                                                  |
-| ---------------------------- | ------------------------------------------------------- |
-| `play`/`pause`               | Play/pause.                                             |
-| `play <#>`                   | Play specific songs (e.g., `play 1-3 5`).               |
-| `add <#>`                    | Add to playlist.                                        |
-| `mode <single/cycle/random>` | Set playback mode.                                      |
-| `stop`                       | Stop playback.                                          |
-| `last`/`previous`            | Play the previous song.                                 |
-| `next`                       | Play the next song.                                     |
-| `restart`/`replay`           | Replay current song.                                    |
-| `volume <#>`                 | Set volume (0–100%, e.g., `volume 40` or `volume 0.4`). |
+|           Command            |  Shortcut   |                         Action                          |
+| :--------------------------: | :---------: | :-----------------------------------------------------: |
+|        `play`/`pause`        | `:p`/`:pa`  |                       Play/pause.                       |
+|          `play <#>`          |  `:p <#>`   |        Play specific songs (e.g., `play 1-3 5`).        |
+|          `add <#>`           |  `:a <#>`   |                    Add to playlist.                     |
+| `mode <single/cycle/random>` | `:m <mode>` |                   Set playback mode.                    |
+|            `stop`            |    `:st`    |                     Stop playback.                      |
+|      `last`/`previous`       |   `:prev`   |                 Play the previous song.                 |
+|            `next`            |    `:n`     |                   Play the next song.                   |
+|      `restart`/`replay`      |    `:r`     |                  Replay current song.                   |
+|         `volume <#>`         | `:vol <#>`  | Set volume (0–100%, e.g., `volume 40` or `volume 0.4`). |
 
 #### **Library & History**
 
-| Command               | Action                                             |
-| --------------------- | -------------------------------------------------- |
-| `savelist`            | Show downloaded songs.                             |
-| `save <Lis/BGM>`      | Move songs to `Lis` (playlist) or `BGM` (library). |
-| `clear`               | Clear savelist.                                    |
-| `library`             | Browse library.                                    |
-| `lookup <song>`       | Search library.                                    |
-| `timelimit <minutes>` | Set max playtime (e.g., `timelimit 45`).           |
-| `history`             | Show listening history.                            |
-| `?`                   | Show currently playing song.                       |
+|        Command        |   Shortcut   |                       Action                       |
+| :-------------------: | :----------: | :------------------------------------------------: |
+|      `savelist`       |    `:sl`     |               Show downloaded songs.               |
+|   `save <Lis/BGM>`    |  `:s <dir>`  | Move songs to `Lis` (playlist) or `BGM` (library). |
+|        `clear`        |    `:cl`     |                  Clear savelist.                   |
+|       `library`       |    `:lib`    |                  Browse library.                   |
+|    `lookup <song>`    | `:lu <song>` |                  Search library.                   |
+| `timelimit <minutes>` |  `:tl <#>`   |      Set max playtime (e.g., `timelimit 45`).      |
+|       `history`       |    `:his`    |              Show listening history.               |
+|          `?`          |     `:?`     |            Show currently playing song.            |
 
 ---
 

@@ -13,6 +13,7 @@ import threading
 import datetime
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.completion import FuzzyCompleter
 from pydub import AudioSegment
 from rapidfuzz import process, fuzz
 
@@ -236,6 +237,405 @@ def print_history_summary():
     for song_name, data in sorted_songs:
         print(f"{data['play_count']}:\t{song_name.replace(".mp3","")}")
 
+def handle_help():
+    print('''
+Command\t\t\tFunction
+--------------------------------------------------------------------------
+quit/exit/end/:q\tExit the program
+check163/:163_cache\tShow 163music cache
+decode/:d #\t\tDecode cached songs
+clear163/:163_clear\tClear 163music cache
+search//s #\t\tSearch in Kugou
+download//d #\t\tDownload from Kugou
+showlist/:l\t\tShow playlist
+play/:p\t\t\tPlay/unpause
+play/:p #\t\tPlay specific songs
+add/:a #\t\tAdd to playlist
+mode/:m #\t\tMode(cycle/single/random)
+stop/:st\t\tStop playing
+pause/:pa\t\tPause
+next/:n\t\t\tNext song
+last/previous/:prev\tPrevious song
+restart/replay/:r\tRestart
+volume/:vol #\t\tSet volume(1-100)
+savelist/:sl\t\tShow save list
+save/:s lis/bgm\t\tMove songs to library
+clear/:cl\t\tClear save list
+library/:lib\t\tShow library
+lookup #/:lu\t\tSearch in library
+timelimit/:tl #\t\tSet play time limit
+history/:his\t\tShow history
+?/:?\t\t\tCurrent song
+--------------------------------------------------------------------------
+''')
+
+def handle_quit(bgm, history_directory):
+    bgm.stop()
+    save_history(history_directory)
+    return 0
+
+def handle_check163(cache_directory):
+    songnames = []
+    files = [os.path.join(cache_directory, f) for f in os.listdir(cache_directory) if f.endswith(".uc")]
+    files.sort(key=lambda f: os.path.getctime(f),reverse=True)
+    if len(files) == 0:
+        print('There is no file in your 163music Cache!')
+        return songnames, files
+    print(f'There is(are) {len(files)} file(s) here:')
+    i = 1
+    for file in files:
+        name = get_name(file.split('\\')[-1].split('-')[0])
+        if name == 'NE':
+            print('Network error! Please check your network!')
+            break
+        else:
+            songnames.append(name)
+            print(f'{i}.\t{sanitize_filename(str(name))}')
+            i += 1
+    return songnames, files
+
+def handle_clear163(cache_directory):
+    for file in os.listdir(cache_directory):
+        file_path = os.path.join(cache_directory, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+    print('163music cache list cleared!')
+
+def handle_search(res, threshold):
+    try:
+        keyword = res.replace('search ','')
+        kugou_list = kugou_getlist(keyword)
+        if len(kugou_list) == 0:
+            print(f'Cannot find any song with keyword {keyword}!')
+            return kugou_list
+        i = 1
+        for kugou_song in kugou_list:
+            print(f'{i}.\t'+str(kugou_song[2])+str(kugou_song[0]))
+            i += 1
+        return kugou_list
+    except:
+        print('Invalid command!')
+        return []
+
+def handle_download(res, kugou_list, save_directory, token2):
+    try:
+        download_list = list(map(int,res.split()[1:]))
+        if len(kugou_list) == 0:
+            print('Please search before downloading!')
+            return
+        elif len(download_list) == 0:
+            print('Please key in the number of the song you want to download!')
+            return
+        print('Start downloading...')
+        for i in download_list:
+            try:
+                result = kugou_download(kugou_list, i,save_directory,token2)
+                if result == 1:
+                    print(f'Successfully Downloaded: {kugou_list[i-1][0]}')
+                else:
+                    print(f'Cannot download song {i}: {kugou_list[i-1][0]}')
+            except Exception as e:
+                if i > len(kugou_list):
+                    print(f'Invalid song number:{i}')
+                else:
+                    print(f'Cannot download song {i}: {kugou_list[i-1][0]}')
+                    print(e)
+        savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
+    except:
+        print('Invalid command!')
+
+def handle_decode(res, files, songnames, save_directory, temp_directory, playlist):
+    try:
+        if len(files) == 0:
+            print('Please key in \'check163\' before decoding!')
+            return
+        if len(res.split()) > 1:
+            tmp = []
+            for part in res.split()[1:]:
+                if '-' in part:
+                    try:
+                        sta, end = map(int, part.split('-'))
+                        if sta > end or sta < 1 or end > len(playlist):
+                            print(f'Invalid range: {part}')
+                        else:
+                            tmp.extend(range(sta, end + 1))
+                    except ValueError:
+                        print(f'Invalid range format: {part}')
+                else:
+                    try:
+                        num = int(part)
+                        if num < 1 or num > len(playlist):
+                            print(f'Invalid song number: {num}')
+                        else:
+                            tmp.append(num)
+                    except ValueError:
+                        print(f'Invalid song number: {part}')
+            tmp = sorted(set(tmp))
+            if not tmp:
+                print('No valid song to decode!')
+            else:
+                decode_list = tmp
+        else:
+            print('Invalid input format!')
+        if len(decode_list) == 0:
+            print('Please key in the number of the song you want to decode!')
+            return
+        print('Start decoding...')
+        for i in decode_list:
+            try:
+                uc_decode(files[i-1],save_directory,temp_directory)
+                print(f'Successfully Decoded: {songnames[i-1]}')
+            except:
+                if i > len(files):
+                    print(f'Invalid song number:{i}')
+                else:
+                    print(f'Cannot decode song {i}: {songnames[i-1]}')
+        savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
+        print('Mission Accomplished!')
+    except:
+        print('Invalid command!')
+
+def handle_showlist(playlist):
+    if len(playlist) == 0:
+        print('There is no song in your playlist!')
+    else:
+        print('Your playlist:')
+        i = 1
+        for song in playlist:
+            print(f'{i}.\t{song}')
+            i += 1
+
+def handle_play(res, bgm, playlist, mode):
+    if res == 'play':
+        bgm.unpause()
+    else:
+        try:
+            if len(res.split()) > 1:
+                tmp = []
+                for part in res.split()[1:]:
+                    if '-' in part:
+                        try:
+                            sta, end = map(int, part.split('-'))
+                            if sta > end or sta < 1 or end > len(playlist):
+                                print(f'Invalid song range: {part}')
+                            else:
+                                tmp.extend(range(sta, end + 1))
+                        except ValueError:
+                            print(f'Invalid range format: {part}')
+                    else:
+                        try:
+                            num = int(part)
+                            if num < 1 or num > len(playlist):
+                                print(f'Invalid song number: {num}')
+                            else:
+                                tmp.append(num)
+                        except ValueError:
+                            print(f'Invalid song number: {part}')
+                tmp = sorted(set(tmp))
+                if not tmp:
+                    print('No valid song to play!')
+                else:
+                    print('Start playing:')
+                    for i in tmp:
+                        print(f'{i}.\t{playlist[i-1]}')
+                    selected_songs = [playlist[i-1] for i in tmp]
+                    if mode == 'random':
+                        random.shuffle(selected_songs)
+                    bgm.set_playlist(selected_songs)
+                    if bgm.nowmode in ['stop', 'pause'] or bgm.playing_songname not in bgm.playlist:
+                        bgm.stop()
+                        bgm.nowplaying = 0
+                        bgm.play()
+            else:
+                print('Invalid input format!')
+        except:
+            print('Invalid command!')
+
+def handle_mode(res, bgm, mode, playlist, sta, end):
+    try:
+        if res.split()[1] not in ['cycle','single','random']:
+            print('Invalid mode!')
+        else:
+            if res.split()[1] != mode or res.split()[1] == 'random':
+                print(f'Playing mode changed: {mode} -> {res.split()[1]}!')
+                mode = res.split()[1]
+                if mode == 'random':
+                    bgm.is_single = 0
+                    tmp = bgm.playlist
+                    random.shuffle(tmp)
+                    bgm.set_playlist(tmp)
+                elif mode == 'single':
+                    bgm.is_single = 1
+                else:
+                    bgm.is_single = 0
+                    bgm.set_playlist(playlist[sta-1:end])
+            else:
+                print(f'Playing mode is already {mode}!')
+        return mode
+    except:
+        print('Invalid command!')
+        return mode
+
+def handle_restart(bgm):
+    bgm.play()
+
+def handle_volume(res, bgm):
+    try:
+        volume = float(res.split()[1])
+        if volume >= 1 and volume <= 100:
+            volume = volume/100
+        if volume >= 0 and volume < 1:
+            bgm.set_volume(volume)
+            print(f'Volume changed to {int(volume*100)}%!')
+        else:
+            print('Invalid volume!')
+    except:
+        print('Invalid volume!')
+
+def handle_savelist(save_directory):
+    savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
+    if len(savelist) == 0:
+        print('There is no song in your savelist!')
+    else:
+        print('Your savelist:')
+        i = 1
+        for song in savelist:
+            print(f'{i}.\t{song}')
+            i += 1
+
+def handle_save(res, savelist, save_directory, play_directory, library_directory, playlist):
+    try:
+        if len(savelist) == 0:
+            print('There is no song in your savelist!')
+        else:
+            if res.split()[1] not in ['lis','bgm']:
+                print('Invalid save list!')
+                print(res.split()[1])
+            else:
+                if res.split()[1] == 'lis':
+                    for song in savelist:
+                        if song not in playlist:
+                            shutil.copy2(os.path.join(save_directory, song), play_directory)
+                            shutil.copy2(os.path.join(save_directory, song), library_directory)
+                            playlist.append(song)
+                            os.remove(os.path.join(save_directory, song))
+                    print('Songs moved to Lis and library!')
+                else:
+                    for song in savelist:
+                        shutil.copy2(os.path.join(save_directory, song), library_directory)
+                        os.remove(os.path.join(save_directory, song))
+                    print('Songs moved to library!')
+                savelist = []
+    except:
+        print('Invalid command!')
+    return savelist
+
+def handle_add(res, bgm, playlist, mode):
+    try:
+        if len(res.split()) > 1:
+            tmp = []
+            for part in res.split()[1:]:
+                if '-' in part:
+                    try:
+                        sta, end = map(int, part.split('-'))
+                        if sta > end or sta < 1 or end > len(playlist):
+                            print(f'Invalid song range: {part}')
+                        else:
+                            tmp.extend(range(sta, end + 1))
+                    except ValueError:
+                        print(f'Invalid range format: {part}')
+                else:
+                    try:
+                        num = int(part)
+                        if num < 1 or num > len(playlist):
+                            print(f'Invalid song number: {num}')
+                        else:
+                            tmp.append(num)
+                    except ValueError:
+                        print(f'Invalid song number: {part}')
+            tmp = sorted(set(tmp))
+            if not tmp:
+                print('No valid song to add!')
+            else:
+                print('Added songs:')
+                for i in tmp:
+                    print(f'{i}.\t{playlist[i-1]}')
+                selected_songs = [playlist[i-1] for i in tmp]
+                if mode == 'random':
+                    random.shuffle(selected_songs)
+                bgm.add_playlist(selected_songs)
+                if bgm.nowmode in ['stop', 'pause'] or bgm.playing_songname not in bgm.playlist:
+                    bgm.stop()
+                    bgm.nowplaying = 0
+                    bgm.play()
+        else:
+            print('Invalid input format!')
+    except:
+        print('Invalid command!')
+
+def handle_clear(savelist, save_directory):
+    for song in savelist:
+        os.remove(os.path.join(save_directory, song))
+    savelist = []
+    print('Save list cleared!')
+    return savelist
+
+def handle_stop(bgm):
+    bgm.stop()
+
+def handle_pause(bgm):
+    bgm.pause()
+
+def handle_next(bgm):
+    bgm.next()
+    print(f'Now playing:\t{bgm.playing_songname}')
+
+def handle_last(bgm):
+    bgm.last()
+    print(f'Now playing:\t{bgm.playing_songname}')
+
+def handle_library(library_directory):
+    library_files = [f for f in pathlib.Path(library_directory).glob("*.mp3")]
+    print('Your library:')
+    i = 1
+    for song in library_files:
+        print(f'{i}.\t{song.name}')
+        i += 1
+
+def handle_lookup(res, library_directory, threshold):
+    try:
+        tolookup = res.split()[1]
+        library = [f.name.replace('.mp3','') for f in pathlib.Path(library_directory).glob("*.mp3")]
+        matches = fuzzy_match_all(tolookup, library, threshold)
+        if matches:
+            for match in matches:
+                print(f"{match[0]}\t\tSimilarity: {int(match[1])}%")
+        else:
+            print("No matched song found.")
+    except:
+        print('Invalid command!')
+
+def handle_timelimit(res, timelimit, lock):
+    try:
+        timelimit_tmp = int(res.split()[1])
+        if timelimit_tmp > 0:
+            with lock:
+                timelimit[0] = timelimit_tmp*60 + int(time.time())
+            # print(timelimit)
+            print(f'Set time limit to {timelimit_tmp} minute(s).')
+            newtime = datetime.datetime.now() + datetime.timedelta(minutes=timelimit_tmp)
+            print(f"Keep playing until {newtime.strftime("%H")}:{newtime.strftime("%M")}:{newtime.strftime("%S")}.")
+        else:
+            print('Invalid time limit!')
+    except:
+        print('Invalid time limit!')
+
+def handle_history():
+    print_history_summary()
+
+def handle_current_song(bgm):
+    print(f'Now playing:\t{bgm.playing_songname}')
+
 if __name__ == '__main__':
     res = ''
     songnames = []
@@ -244,8 +644,40 @@ if __name__ == '__main__':
     running = 1
     timelimit = [int(time.time()) + 1e9]
     mode = 'cycle'
-    commands = ['help','quit','exit','end','check163','decode','clear163','search','download','showlist','play','mode single','mode cycle','mode random','stop','pause','next','restart','replay','volume','savelist','save Lis','save BGM','clear','library','lookup','timelimit','?','add','last','previous','history']
-    completer = WordCompleter(commands, ignore_case=True)
+    commands = [
+        'help', ':h',
+        'quit', 'exit', 'end', ':q',
+        'check163', ':163_cache',
+        'decode', ':d',
+        'clear163', ':163_clear',
+        'search', '/s',
+        'download', '/d',
+        'showlist', ':l',
+        'play', ':p',
+        'mode', 'single', 'cycle', 'random', ':m',
+        'stop', ':st',
+        'pause', ':pa',
+        'next', ':n',
+        'restart', 'replay', ':r',
+        'volume', ':vol',
+        'savelist', ':sl',
+        'save', 'lis', 'bgm', ':s',
+        'add', ':a',
+        'clear', ':cl',
+        'library', ':lib',
+        'lookup', ':lu',
+        'timelimit', ':tl',
+        'history', ':his',
+        '?', ':?',
+        'last', 'previous', ':prev']
+    completer = FuzzyCompleter(
+        WordCompleter(
+            commands,
+            ignore_case=True,
+            match_middle=True,  # 允许中间匹配
+            sentence=True       # 按完整单词匹配
+        )
+    )
     session = PromptSession(completer=completer)
     with open("savedata.txt", "r", encoding="utf-8") as f:
         lines = f.readlines()
@@ -282,372 +714,56 @@ if __name__ == '__main__':
     while running:
         print()
         res = str(session.prompt('>> ')).strip().lower()
-        if res == 'help':
-            print('''
-Command\t\t\tFunction
---------------------------------------------------------------------------
-quit/exit/end\t\tExit the program.
-check163\t\tPrint 163music cache list.
-decode #\t\tDecode song in 163music cache list.
-clear163\t\tClear the 163music cache list.
-search #\t\tSearch song in Kugou.
-download #\t\tDownload song from Kugou.
-showlist\t\tShow the song list.
-play\t\t\tPlay or unpause the song.
-play #\t\t\tChoose songs in the Lis_list to play.
-add #\t\t\tAdd songs to the play list.
-mode #\t\t\tChange the playing mode.
-stop\t\t\tStop playing.
-pause\t\t\tPause the song.
-last/previous\t\tPlay the previous song.
-next\t\t\tPlay the next song.
-restart/replay\t\tReplay the song.
-volume #\t\tChange the volume.
-savelist\t\tShow the save list.
-save #\t\t\tMove songs in save list to the designated library and clear the save list.
-clear\t\t\tClear the save list.
-library\t\t\tShow the library.
-lookup #\t\tLookup the song in the library.
-timelimit #\t\tSet time limit (minutes) for song playing.
-history\t\t\tShow your listening history.
-?\t\t\tShow the current playing song.
---------------------------------------------------------------------------
-''')
-        elif res == 'quit' or res == 'exit' or res == 'end':
-            bgm.stop()
-            save_history(history_directory)
-            running = 0
-        elif res == 'check163':
-            songnames = []
-            files = [os.path.join(cache_directory, f) for f in os.listdir(cache_directory) if f.endswith(".uc")]
-            files.sort(key=lambda f: os.path.getctime(f),reverse=True)
-            if len(files) == 0:
-                print('There is no file in your 163music Cache!')
-                continue
-            print(f'There is(are) {len(files)} file(s) here:')
-            i = 1
-            for file in files:
-                name = get_name(file.split('\\')[-1].split('-')[0])
-                if name == 'NE':
-                    print('Network error! Please check your network!')
-                    break
-                else:
-                    songnames.append(name)
-                    print(f'{i}.\t{sanitize_filename(str(name))}')
-                    i += 1
-        elif res == 'clear163':
-            for file in os.listdir(cache_directory):
-                file_path = os.path.join(cache_directory, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            print('163music cache list cleared!')
-        elif 'search' in res:
-            try:
-                keyword = res.replace('search ','')
-                kugou_list = kugou_getlist(keyword)
-                if len(kugou_list) == 0:
-                    print(f'Cannot find any song with keyword {keyword}!')
-                    continue
-                i = 1
-                for kugou_song in kugou_list:
-                    print(f'{i}.\t'+str(kugou_song[2])+str(kugou_song[0]))
-                    i += 1
-            except:
-                print('Invalid command!')
-        elif 'download' in res:
-            try:
-                download_list = list(map(int,res.split()[1:]))
-                if len(kugou_list) == 0:
-                    print('Please search before downloading!')
-                    continue
-                elif len(download_list) == 0:
-                    print('Please key in the number of the song you want to download!')
-                    continue
-                print('Start downloading...')
-                for i in download_list:
-                    try:
-                        result = kugou_download(kugou_list, i,save_directory,token2)
-                        if result == 1:
-                            print(f'Successfully Downloaded: {kugou_list[i-1][0]}')
-                        else:
-                            print(f'Cannot download song {i}: {kugou_list[i-1][0]}')
-                    except Exception as e:
-                        if i > len(kugou_list):
-                            print(f'Invalid song number:{i}')
-                        else:
-                            print(f'Cannot download song {i}: {kugou_list[i-1][0]}')
-                            print(e)
-                savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
-            except:
-                print('Invalid command!')
-        elif 'decode' in res:
-            try:
-                if len(files) == 0:
-                    print('Please key in \'check163\' before decoding!')
-                    continue
-                if len(res.split()) > 1:
-                    tmp = []
-                    for part in res.split()[1:]:
-                        if '-' in part:
-                            try:
-                                sta, end = map(int, part.split('-'))
-                                if sta > end or sta < 1 or end > len(playlist):
-                                    print(f'Invalid range: {part}')
-                                else:
-                                    tmp.extend(range(sta, end + 1))
-                            except ValueError:
-                                print(f'Invalid range format: {part}')
-                        else:
-                            try:
-                                num = int(part)
-                                if num < 1 or num > len(playlist):
-                                    print(f'Invalid song number: {num}')
-                                else:
-                                    tmp.append(num)
-                            except ValueError:
-                                print(f'Invalid song number: {part}')
-                    tmp = sorted(set(tmp))
-                    if not tmp:
-                        print('No valid song to decode!')
-                    else:
-                        decode_list = tmp
-                else:
-                    print('Invalid input format!')
-                if len(decode_list) == 0:
-                    print('Please key in the number of the song you want to decode!')
-                    continue
-                print('Start decoding...')
-                for i in decode_list:
-                    try:
-                        uc_decode(files[i-1],save_directory,temp_directory)
-                        print(f'Successfully Decoded: {songnames[i-1]}')
-                    except:
-                        if i > len(files):
-                            print(f'Invalid song number:{i}')
-                        else:
-                            print(f'Cannot decode song {i}: {songnames[i-1]}')
-                savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
-                print('Mission Accomplished!')
-            except:
-                print('Invalid command!')
-        elif res == 'showlist':
-            if len(playlist) == 0:
-                print('There is no song in your playlist!')
-            else:
-                print('Your playlist:')
-                i = 1
-                for song in playlist:
-                    print(f'{i}.\t{song}')
-                    i += 1
-        elif res == 'play':
-            bgm.unpause()
-        elif res == 'pause':
-            bgm.pause()
-        elif 'play' in res:
-            try:
-                if len(res.split()) > 1:
-                    tmp = []
-                    for part in res.split()[1:]:
-                        if '-' in part:
-                            try:
-                                sta, end = map(int, part.split('-'))
-                                if sta > end or sta < 1 or end > len(playlist):
-                                    print(f'Invalid song range: {part}')
-                                else:
-                                    tmp.extend(range(sta, end + 1))
-                            except ValueError:
-                                print(f'Invalid range format: {part}')
-                        else:
-                            try:
-                                num = int(part)
-                                if num < 1 or num > len(playlist):
-                                    print(f'Invalid song number: {num}')
-                                else:
-                                    tmp.append(num)
-                            except ValueError:
-                                print(f'Invalid song number: {part}')
-                    tmp = sorted(set(tmp))
-                    if not tmp:
-                        print('No valid song to play!')
-                    else:
-                        print('Start playing:')
-                        for i in tmp:
-                            print(f'{i}.\t{playlist[i-1]}')
-                        selected_songs = [playlist[i-1] for i in tmp]
-                        if mode == 'random':
-                            random.shuffle(selected_songs)
-                        bgm.set_playlist(selected_songs)
-                        if bgm.nowmode in ['stop', 'pause'] or bgm.playing_songname not in bgm.playlist:
-                            bgm.stop()
-                            bgm.nowplaying = 0
-                            bgm.play()
-                else:
-                    print('Invalid input format!')
-            except:
-                print('Invalid command!')
-        elif 'mode' in res:
-            try:
-                if res.split()[1] not in ['cycle','single','random']:
-                    print('Invalid mode!')
-                else:
-                    if res.split()[1] != mode or res.split()[1] == 'random':
-                        print(f'Playing mode changed: {mode} -> {res.split()[1]}!')
-                        mode = res.split()[1]
-                        if mode == 'random':
-                            bgm.is_single = 0
-                            tmp = bgm.playlist
-                            random.shuffle(tmp)
-                            bgm.set_playlist(tmp)
-                        elif mode == 'single':
-                            bgm.is_single = 1
-                        else:
-                            bgm.is_single = 0
-                            bgm.set_playlist(playlist[sta-1:end])
-                    else:
-                        print(f'Playing mode is already {mode}!')
-            except:
-                print('Invalid command!')
-        elif res == 'restart' or res == 'replay':
-            bgm.play()
-        elif 'volume' in res:
-            try:
-                volume = float(res.split()[1])
-                if volume >= 1 and volume <= 100:
-                    volume = volume/100
-                if volume >= 0 and volume < 1:
-                    bgm.set_volume(volume)
-                    print(f'Volume changed to {int(volume*100)}%!')
-                else:
-                    print('Invalid volume!')
-            except:
-                print('Invalid volume!')
-        elif res == 'savelist':
-            savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
-            if len(savelist) == 0:
-                print('There is no song in your savelist!')
-            else:
-                print('Your savelist:')
-                i = 1
-                for song in savelist:
-                    print(f'{i}.\t{song}')
-                    i += 1
-        elif 'save' in res:
-            try:
-                if len(savelist) == 0:
-                    print('There is no song in your savelist!')
-                else:
-                    if res.split()[1] not in ['lis','bgm']:
-                        print('Invalid save list!')
-                        print(res.split()[1])
-                    else:
-                        if res.split()[1] == 'lis':
-                            for song in savelist:
-                                if song not in playlist:
-                                    shutil.copy2(os.path.join(save_directory, song), play_directory)
-                                    shutil.copy2(os.path.join(save_directory, song), library_directory)
-                                    playlist.append(song)
-                                    os.remove(os.path.join(save_directory, song))
-                            print('Songs moved to Lis and library!')
-                        else:
-                            for song in savelist:
-                                shutil.copy2(os.path.join(save_directory, song), library_directory)
-                                os.remove(os.path.join(save_directory, song))
-                            print('Songs moved to library!')
-                        savelist = []
-            except:
-                print('Invalid command!')
-        elif 'add' in res:
-            try:
-                if len(res.split()) > 1:
-                    tmp = []
-                    for part in res.split()[1:]:
-                        if '-' in part:
-                            try:
-                                sta, end = map(int, part.split('-'))
-                                if sta > end or sta < 1 or end > len(playlist):
-                                    print(f'Invalid song range: {part}')
-                                else:
-                                    tmp.extend(range(sta, end + 1))
-                            except ValueError:
-                                print(f'Invalid range format: {part}')
-                        else:
-                            try:
-                                num = int(part)
-                                if num < 1 or num > len(playlist):
-                                    print(f'Invalid song number: {num}')
-                                else:
-                                    tmp.append(num)
-                            except ValueError:
-                                print(f'Invalid song number: {part}')
-                    tmp = sorted(set(tmp))
-                    if not tmp:
-                        print('No valid song to add!')
-                    else:
-                        print('Added songs:')
-                        for i in tmp:
-                            print(f'{i}.\t{playlist[i-1]}')
-                        selected_songs = [playlist[i-1] for i in tmp]
-                        if mode == 'random':
-                            random.shuffle(selected_songs)
-                        bgm.add_playlist(selected_songs)
-                        if bgm.nowmode in ['stop', 'pause'] or bgm.playing_songname not in bgm.playlist:
-                            bgm.stop()
-                            bgm.nowplaying = 0
-                            bgm.play()
-                else:
-                    print('Invalid input format!')
-            except:
-                print('Invalid command!')
-        elif res == 'clear':
-            for song in savelist:
-                os.remove(os.path.join(save_directory, song))
-            savelist = []
-            print('Save list cleared!')
-        elif res == 'stop':
-            bgm.stop()
-        elif res == 'next':
-            bgm.next()
-            print(f'Now playing:\t{bgm.playing_songname}')
-        elif res in ['last', 'previous']:
-            bgm.last()
-            print(f'Now playing:\t{bgm.playing_songname}')
-        elif res == 'library':
-            library_files = [f for f in pathlib.Path(library_directory).glob("*.mp3")]
-            print('Your library:')
-            i = 1
-            for song in library_files:
-                print(f'{i}.\t{song.name}')
-                i += 1
-        elif 'lookup' in res:
-            try:
-                tolookup = res.split()[1]
-                library = [f.name.replace('.mp3','') for f in pathlib.Path(library_directory).glob("*.mp3")]
-                matches = fuzzy_match_all(tolookup, library, threshold)
-                if matches:
-                    for match in matches:
-                        print(f"{match[0]}\t\tSimilarity: {int(match[1])}%")
-                else:
-                    print("No matched song found.")
-            except:
-                print('Invalid command!')
-        elif 'timelimit' in res:
-            try:
-                timelimit_tmp = int(res.split()[1])
-                if timelimit_tmp > 0:
-                    with lock:
-                        timelimit[0] = timelimit_tmp*60 + int(time.time())
-                    # print(timelimit)
-                    print(f'Set time limit to {timelimit_tmp} minute(s).')
-                    newtime = datetime.datetime.now() + datetime.timedelta(minutes=timelimit_tmp)
-                    print(f"Keep playing until {newtime.strftime("%H")}:{newtime.strftime("%M")}:{newtime.strftime("%S")}.")
-                else:
-                    print('Invalid time limit!')
-            except:
-                print('Invalid time limit!')
-        elif res == 'history':
-            print_history_summary()
-        elif res == '?':
-            print(f'Now playing:\t{bgm.playing_songname}')
+        if res in ['help', ':h']:
+            handle_help()
+        elif res in [':q', 'quit', 'exit', 'end']:
+            running = handle_quit(bgm, history_directory)
+        elif res in [':163_cache', 'check163']:
+            songnames, files = handle_check163(cache_directory)
+        elif res == [':163_clear', 'clear163']:
+            handle_clear163(cache_directory)
+        elif 'search' in res or '/s' in res:
+            kugou_list = handle_search(res, threshold)
+        elif 'download' in res or '/d' in res:
+            handle_download(res, kugou_list, save_directory, token2)
+        elif 'decode' in res or ':d' in res:
+            handle_decode(res, files, songnames, save_directory, temp_directory, playlist)
+        elif res in [':l', 'showlist']:
+            handle_showlist(playlist)
+        elif 'play' in res or ':p' in res:
+            handle_play(res, bgm, playlist, mode)
+        elif 'mode' in res or ':m' in res:
+            mode = handle_mode(res, bgm, mode, playlist, sta, end)
+        elif res in [':r', 'restart', 'replay']:
+            handle_restart(bgm)
+        elif 'volume' in res or ':vol' in res:
+            handle_volume(res, bgm)
+        elif res in [':sl' ,'savelist']:
+            handle_savelist(save_directory)
+        elif 'save' in res or ':s' in res:
+            savelist = handle_save(res, savelist, save_directory, play_directory, library_directory, playlist)
+        elif 'add' in res or ':a' in res:
+            handle_add(res, bgm, playlist, mode)
+        elif res in [':cl' ,'clear']:
+            savelist = handle_clear(savelist, save_directory)
+        elif res in [':st', 'stop']:
+            handle_stop(bgm)
+        elif res in [':pa','pause']:
+            handle_pause(bgm)
+        elif res in [':n','next']:
+            handle_next(bgm)
+        elif res in [':prev', 'last', 'previous']:
+            handle_last(bgm)
+        elif res in [':lib', 'library']:
+            handle_library(library_directory)
+        elif 'lookup' in res or ':lu' in res:
+            handle_lookup(res, library_directory, threshold)
+        elif 'timelimit' in res or ':tl' in res:
+            handle_timelimit(res, timelimit, lock)
+        elif res in [':his', 'history']:
+            handle_history()
+        elif res in [':?', '?']:
+            handle_current_song(bgm)
         elif res == '':
             continue
         else:
