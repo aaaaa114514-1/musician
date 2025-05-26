@@ -1,0 +1,12 @@
+{
+    "songs": {
+        "fairy stage.mp3": {
+            "play_count": 2
+        },
+        "Famishin - 二人の魔法.mp3": {
+            "play_count": 2
+        }
+    },
+    "total_time": 20,
+    "total_count": 4
+}

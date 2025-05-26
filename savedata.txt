@@ -1,12 +1,12 @@
 C:\Users\Netease\CloudMusic\Cache\Cache
-D:\BGM\Download&Decode
-D:\BGM\Download&Decode\temp
-D:\BGM\Lis
-D:\BGM
+BGM\Download&Decode
+BGM\Download&Decode\temp
+BGM\Lis
+BGM
 0.4
 30
 55f2409f72970daa21bdc63acee305db
-D:\BGM\Settings\history.txt
+BGM\Settings\history.txt
 
 备注：
 网易云音乐缓存目录

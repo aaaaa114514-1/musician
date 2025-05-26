@@ -21,11 +21,14 @@ The `musician` directory contains the following files:
 
 ```
 musician/
+├── BGM        		   # The default location to store music
+├── Old_versions       # Old versions of musician  
 ├── history.txt        # Listening history log  
 ├── Icon.ico           # Program icon  
 ├── musician.exe       # Executable (for users)  
 ├── musician.py        # Source code (for developers)  
 ├── README.md          # Documentation  
+├── README.zh-CN.md    # Documentation in Chinese  
 └── savedata.txt       # Configuration file  
 ```
 
@@ -42,24 +45,24 @@ The file defines paths and settings:
 
 ```
 C:\Users\Netease\CloudMusic\Cache\Cache   # NetEase Cloud Music cache path  
-D:\BGM\Download&Decode                    # Download/decode directory  
-D:\BGM\Download&Decode\temp               # Temporary files  
-D:\BGM\Lis                                # Playlist folder  
-D:\BGM                                    # Main library  
+BGM\Download&Decode                       # Download/decode directory  
+BGM\Download&Decode\temp                  # Temporary files  
+BGM\Lis                                   # Playlist folder  
+BGM                                       # Main library  
 0.4                                       # Default volume (0–1)  
 30                                        # Search match threshold (%)  
 1d4e5b7decbe434048e596ae2d597adb          # Kugou token (last 32 chars)  
-D:\BGM\Settings\history.txt               # History file path  
+BGM\Settings\history.txt                  # History file path  
 ```
 
 #### **Setup Instructions**
 
-1. **NetEase Cache Path**
+1. **NetEase Cache Path (Necessary)**
 
    - Open **NetEase Cloud Music Desktop** → Settings → Download → **Copy Cache Path**.
    - Append `\Cache` to the path (e.g., `C:\...\Cache\Cache`).
 
-2. **Library Folders**
+2. **Library Folders [Use the default location in the musician directory if not modified]**
     Create these directories (example names):
 
    ```
@@ -80,7 +83,7 @@ D:\BGM\Settings\history.txt               # History file path
    - Paste into line 8 of `savedata.txt`.
    - *Skip if you don’t need Kugou downloads.*
 
-4. **History File**
+4. **History File [Use the default location in the musician directory if not modified]**
     Specify a path for `history.txt` (line 9) and **move the `history.txt` file to the path** . Then, the program will manage this file automatically.
 
 ------

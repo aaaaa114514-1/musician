@@ -21,11 +21,14 @@
 
 ```
 musician/
+├── BGM          	   # 默认的曲库目录  
+├── Old_versions       # Musician的历史版本  
 ├── history.txt        # 播放历史记录  
 ├── Icon.ico           # 程序图标  
 ├── musician.exe       # 可执行文件（用户使用）  
 ├── musician.py        # 源代码（开发者查看）  
-├── README.md          # 说明文档  
+├── README.md          # 英文说明文档  
+├── README.zh-CN.md    # 中文说明文档  
 └── savedata.txt       # 配置文件  
 ```
 
@@ -42,24 +45,24 @@ musician/
 
 ```
 C:\Users\Netease\CloudMusic\Cache\Cache   # 网易云音乐缓存路径  
-D:\BGM\Download&Decode                    # 下载/解码目录  
-D:\BGM\Download&Decode\temp               # 临时文件存放  
-D:\BGM\Lis                                # 播放列表文件夹  
-D:\BGM                                    # 主音乐库  
+BGM\Download&Decode                   	  # 下载/解码目录  
+BGM\Download&Decode\temp                  # 临时文件存放  
+BGM\Lis                                   # 播放列表文件夹  
+BGM                                       # 主音乐库  
 0.4                                       # 默认音量（0–1）  
 30                                        # 搜索匹配阈值（%）  
 1d4e5b7decbe434048e596ae2d597adb          # 酷狗 token（后32位）  
-D:\BGM\Settings\history.txt               # 历史记录文件路径  
+BGM\Settings\history.txt                  # 历史记录文件路径  
 ```
 
 #### **配置步骤**
 
-1. **网易云缓存路径**
+1. **网易云缓存路径（必要）**
 
    - 打开 **网易云音乐桌面端** → 设置 → 下载 → **复制缓存路径**。
    - 在路径末尾手动添加 `\Cache`（如 `C:\...\Cache\Cache`）。
 
-2. **音乐库文件夹**
+2. **音乐库文件夹【若不修改，则使用musician目录下的默认位置】**
    创建以下目录（示例名称）：
 
    ```
@@ -80,7 +83,7 @@ D:\BGM\Settings\history.txt               # 历史记录文件路径
    - 粘贴到 `savedata.txt` 第 8 行。
    - *如果不需要使用酷狗下载音乐，可跳过此步。*
 
-4. **历史记录文件**
+4. **历史记录文件【若不修改，则使用musician目录下的默认位置】**
    指定 `history.txt` 的路径（第 9 行）**并将给出的 `history.txt` 文件移到指定路径下**，程序会自动管理该文件。
 
 ------
