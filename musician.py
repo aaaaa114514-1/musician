@@ -654,7 +654,8 @@ if __name__ == '__main__':
         'download', '/d',
         'showlist', ':l',
         'play', ':p',
-        'mode', 'single', 'cycle', 'random', ':m',
+        'mode single', 'mode cycle', 'mode random',
+        ':m single', ':m cycle', ':m random',
         'stop', ':st',
         'pause', ':pa',
         'next', ':n',
@@ -713,6 +714,7 @@ if __name__ == '__main__':
 
     while running:
         print()
+        # print(res)
         res = str(session.prompt('>> ')).strip().lower()
         if res in ['help', ':h']:
             handle_help()
@@ -720,7 +722,7 @@ if __name__ == '__main__':
             running = handle_quit(bgm, history_directory)
         elif res in [':163_cache', 'check163']:
             songnames, files = handle_check163(cache_directory)
-        elif res == [':163_clear', 'clear163']:
+        elif res in [':163_clear', 'clear163']:
             handle_clear163(cache_directory)
         elif 'search' in res or '/s' in res:
             kugou_list = handle_search(res, threshold)
