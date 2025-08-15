@@ -503,7 +503,8 @@ def handle_savelist(save_directory):
             print(f'{i}.\t{song}')
             i += 1
 
-def handle_save(res, savelist, save_directory, play_directory, library_directory, playlist):
+def handle_save(res, save_directory, play_directory, library_directory, playlist):
+    savelist = [f.name for f in pathlib.Path(save_directory).glob("*.mp3")]
     try:
         if len(savelist) == 0:
             print('There is no song in your savelist!')
@@ -743,7 +744,7 @@ if __name__ == '__main__':
         elif res in [':sl' ,'savelist']:
             handle_savelist(save_directory)
         elif 'save' in res or ':s' in res:
-            savelist = handle_save(res, savelist, save_directory, play_directory, library_directory, playlist)
+            savelist = handle_save(res, save_directory, play_directory, library_directory, playlist)
         elif 'add' in res or ':a' in res:
             handle_add(res, bgm, playlist, mode)
         elif res in [':cl' ,'clear']:
